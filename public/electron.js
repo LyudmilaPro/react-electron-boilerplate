@@ -1,13 +1,36 @@
 const electron = require('electron')
 const settings = require('./settings')
 
-const app = electron.app
-const BrowserWindow = electron.BrowserWindow
+const { app, BrowserWindow, Menu, nativeImage, Tray } = electron
 
 const path = require('path')
 const isDev = require('electron-is-dev')
 
+let tray
 let mainWindow
+
+const trayIcon = path.join(__dirname, '/trayicon.png')
+
+function createTray() {
+  tray = new Tray(nativeImage.createFromPath(trayIcon).resize({ width: 16, height: 16 }))
+
+  const menuItems = [
+    {
+      label: 'Quit',
+      accelerator: 'Cmd+Q',
+      click: () => {
+        if (mainWindow) {
+          app.quit()
+        }
+      }
+    }
+  ]
+
+  const contextMenu = Menu.buildFromTemplate(menuItems)
+
+  tray.setToolTip('Electron app')
+  tray.setContextMenu(contextMenu)
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow(settings)
@@ -21,7 +44,10 @@ function createWindow() {
   mainWindow.on('closed', () => mainWindow = null)
 }
 
-app.on('ready', createWindow)
+app.on('ready', () => {
+  createTray()
+  createWindow()
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
